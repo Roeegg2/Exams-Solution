@@ -47,9 +47,12 @@
                 (val2 (value-of exp2 env)))
             (let ((num1 (expval->num val1))
                   (num2 (expval->num val2)))
+              (begin
+                (printf "1 in diff: ~a \n env: ~a \n" num1 (env->list env))
+                (printf "2 in diff: ~a\n" num2)
+              
               (num-val
-                (- num1 num2)))))
-
+                (- num1 num2))))))
         ;\commentbox{\zerotestspec}
         (zero?-exp (exp1)
           (let ((val1 (value-of exp1 env)))
@@ -72,7 +75,7 @@
               (extend-env var (newref v1) env))))
         
         (proc-exp (var body)
-          (proc-val (procedure var body env)))
+          (proc-val (procedure var body env #f)))
 
         (call-exp (rator rand)
           (let ((proc (expval->proc (value-of rator env)))
@@ -104,15 +107,22 @@
           (let* ((old-proc-val (apply-env env id2))
                  (old-proc (expval->proc (deref old-proc-val))))
             (cases proc old-proc
-              (procedure (orig-var body saved-env)
-                (let ((wrapper-proc
-                        (proc-val
-                          (procedure id1
-                            body
-                            (extend-env orig-var (apply-env saved-env id1) saved-env)))))
-                          (printf wrapper-proc)
-                  (let ((new-env (extend-env id2 (newref wrapper-proc) env)))
-                    (value-of expression new-env)))))))
+              (procedure (var body saved-env is-applied)
+                (let* ((new-env (extend-env var (apply-env env id1) env))
+                       (new-proc (proc-val (procedure id1 body new-env #t)))
+                       (final-env (extend-env id2 (newref new-proc) new-env)))
+              
+                    (begin
+                     (printf "Env of running: ~a\n" (env->list final-env))
+                     (value-of expression final-env)
+                     (printf "value now of ->~a is ~a \n" var (deref (apply-env env var)))
+                    )
+                )
+              )
+            )
+            ;; 1. We need to activate the value-of body with an environment in which x has a value of the pointer A, where A is the (apply-env env id1) value. 
+          )
+        )
 
         )))
 
@@ -132,19 +142,40 @@
   (define apply-procedure
     (lambda (proc1 arg)
       (cases proc proc1
-        (procedure (var body saved-env)
-          (let ((r (newref arg)))
-            (let ((new-env (extend-env var r saved-env)))
-              (when (instrument-let)
-                (begin
-                  (eopl:printf
-                    "entering body of proc ~s with env =~%"
-                    var)
-                  (pretty-print (env->list new-env)) 
-                  (eopl:printf "store =~%")
-                  (pretty-print (store->readable (get-store-as-list)))
-                  (eopl:printf "~%")))
-              (value-of body new-env)))))))  
+        (procedure (var body saved-env is-applied)
+          (begin
+            (printf "Running proc with var: ~a \n" var)
+          
+            (if is-applied
+              (let ((r (newref arg)))
+                  (begin 
+                  (printf "going to change ~a \n" (apply-env saved-env var))
+
+                  (setref! 
+                      (apply-env saved-env var)
+                      arg
+                    )
+                  (printf "value now of ->~a is ~a \n" var arg)
+                  (printf "running with env: ~a \n" (env->list saved-env))
+                    
+                    (value-of body saved-env)
+                    (setref! 
+                      (apply-env saved-env var)
+                      (deref (apply-env saved-env var))
+                    )
+                  )
+                )
+
+                (let ((r (newref arg)))
+              (let ((new-env (extend-env var r saved-env)))
+                (value-of body new-env)))
+
+            )
+          )
+        )
+      )
+    )
+  )
 
   ;; store->readable : Listof(List(Ref,Expval)) 
   ;;                    -> Listof(List(Ref,Something-Readable))

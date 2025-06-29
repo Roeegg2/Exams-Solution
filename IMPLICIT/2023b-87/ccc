@@ -1,0 +1,24 @@
+// ... existing code ...
+        (var-exp (var) (force-thunk (deref (apply-env env var))))
+// ... existing code ...
+        (let-exp (var exp1 body)       
+          (let ((v1 (if (call-exp? exp1)
+                        (thunk-val (lambda () (value-of exp1 env)))
+                        (value-of exp1 env))))
+            (value-of body
+              (extend-env var (newref v1) env))))
+// ... existing code ...
+;; Helper to check if an expression is a call-exp
+(define call-exp?
+  (lambda (exp)
+    (cases expression exp
+      (call-exp (rator rand) #t)
+      (else #f))))
+
+;; Helper to force a thunk if the value is a thunk-val
+(define force-thunk
+  (lambda (v)
+    (cases expval v
+      (thunk-val (th) (force-thunk (th)))
+      (else v))))
+// ... existing code ...

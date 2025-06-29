@@ -74,24 +74,20 @@
             (apply-procedure proc arg)))
 
         (Curry-exp (id1 id2 body)
-          (proc-val (curried-procedure id1 (curried-procedure id2 body env) env)))
+          (proc-val
+            (lambda (val1)
+              (proc-val
+                (lambda (val2)
+                  (value-of body (extend-env id2 val2 (extend-env id1 val1 env))))))))
 
         )))
 
-  (define curried-procedure
-    (lambda (var body env)
-      
-    )
-  )
   ;; procedure : Var * Exp * Env -> Proc
   ;; Page: 79
   (define procedure
     (lambda (var body env)
       (lambda (val)
-        (begin
-          (printf body)
-        
-        (value-of body (extend-env var val env))))))
+        (value-of body (extend-env var val env)))))
   
   ;; apply-procedure : Proc * ExpVal -> ExpVal
   ;; Page: 79
