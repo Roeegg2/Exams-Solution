@@ -10,4 +10,6 @@ In some occurences (only a few), I have grouped together a few exercises that ca
 ### Some exams are missing - either because I don't have them, or because I haven't solved them yet (they'll be uploaded once I do)
 In general there's no record for any exam in 2022 (?) 
 
+`LANGS` the files for each chapter, as listed in the 2025b course syllabus. When solving a question, please use the source code from that folder.
+
 ![Sumary](summary.png)
